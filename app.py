@@ -16,7 +16,7 @@ def create_session_set(user_id, sessions):
     # Determine the pages searched in the session group
 
     # Determine the start time by ordering timestamp
-    return
+    return []
 
 
 # BEGIN MAIN PROGRAM
@@ -24,9 +24,25 @@ def create_session_set(user_id, sessions):
 raw_response = requests.get('https://candidate.hubteam.com/candidateTest/v3/problem/dataset?userKey=4345b1d67362a424348e1cd8e827')
 # pretty_json(raw_response.json())
 
-# Organize visits by visitorId
+# Group visits by visitorId
 grouped_visits = {}
-response = json.dumps(raw_response.json())
+response = raw_response.json()['events']
 
 for v in response:
-    continue
+    # v: {url, visitorId, timestamp}
+    id = v['visitorId']
+    if id in grouped_visits:
+        grouped_visits[id].append([v['url'], v['timestamp']])
+    else:
+        grouped_visits[id] = [[v['url'], v['timestamp']]]
+
+# Sort visits by timestamp
+grouped_visits = {k: v for k, v in sorted(grouped_visits.items(), key=lambda item: item[1])}
+
+# Pass grouped visits to helper function and store return values
+sessions_by_user = {}
+for user, visits in grouped_visits:
+    sessions_by_user[user] = create_session_set(user, visits)
+
+
+print(sessions_by_user)
