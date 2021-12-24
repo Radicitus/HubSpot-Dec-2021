@@ -16,26 +16,29 @@ def create_session_set(user_id, user_visits):
     # Determine the groups of sessions
     i = 0
     while i < len(user_visits) - 1:
-        if user_visits[i + 1][1] - user_visits[i][1] < 600000:
+        time_diff = user_visits[i + 1][1] - user_visits[i][1]
+        v1 = user_visits[i]
+        v2 = user_visits[i + 1]
+        if time_diff <= 600000:
             session_pages.append(user_visits[i][0])
             session_pages.append(user_visits[i + 1][0])
-            session_duration += user_visits[i + 1][1] - user_visits[i][1]
+            session_duration += time_diff
             i += 1
         else:
             if not session_duration:
                 sessions.append(
                     {
-                        'duration': session_duration,
-                        'pages': user_visits[i][0],
-                        'startTime': session_start
+                        "duration": session_duration,
+                        "pages": user_visits[i][0],
+                        "startTime": session_start
                     }
                 )
             else:
                 sessions.append(
                     {
-                        'duration': session_duration,
-                        'pages': sorted(session_pages),
-                        'startTime': session_start
+                        "duration": session_duration,
+                        "pages": sorted(session_pages),
+                        "startTime": session_start
                     }
                 )
             i += 1
@@ -53,12 +56,10 @@ def create_session_set(user_id, user_visits):
 # BEGIN MAIN PROGRAM
 # Request data from API
 raw_response = requests.get('https://candidate.hubteam.com/candidateTest/v3/problem/dataset?userKey=4345b1d67362a424348e1cd8e827')
-# pretty_json(raw_response.json())
 
 # Group visits by visitorId
 grouped_visits = {}
 response = raw_response.json()['events']
-
 for v in response:
     # v: {url, visitorId, timestamp}
     id = v['visitorId']
@@ -76,10 +77,10 @@ for user, visits in grouped_visits.items():
     sessions_by_user[user] = create_session_set(user, visits)
 
 # Jsonify sessions_by_user and send by http call
-data = json.dumps(
-    {
-        'sessionsByUser': sessions_by_user
-    }
-)
+final_json_payload = {}
+final_json_payload['sessionsByUser'] = sessions_by_user
+data = json.dumps(final_json_payload)
+print(json.dumps(final_json_payload, indent=4))
+
 post_response = requests.post('https://candidate.hubteam.com/candidateTest/v3/problem/result?userKey=4345b1d67362a424348e1cd8e827', data)
 print(post_response.status_code, post_response.reason, post_response.content)
