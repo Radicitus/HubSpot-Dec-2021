@@ -68,21 +68,21 @@ for v in response:
     else:
         grouped_visits[id] = [[v['url'], v['timestamp']]]
 
-# Sort visits by timestamp
-s_grouped_visits = {}
-for key, val in grouped_visits.items():
-    s_grouped_visits[key] = sorted(val, key=lambda vis: vis[1])
-grouped_visits = s_grouped_visits
-
 # Pass grouped visits to helper function and store return values
 sessions_by_user = {}
 for user, visits in grouped_visits.items():
     sessions_by_user[user] = create_session_set(user, visits)
 
+# Sort sessions by timestamp
+sorted_sessions = {}
+for key, val in sessions_by_user.items():
+    sorted_sessions[key] = sorted(val, key=lambda vis: vis["startTime"])
+sessions_by_user = sorted_sessions
+
 # Jsonify sessions_by_user and send by http call
 final_json_payload = {}
 final_json_payload['sessionsByUser'] = sessions_by_user
-data = json.dumps(final_json_payload)
+data = json.dumps(sessions_by_user)
 print(json.dumps(final_json_payload, indent=4))
 
 post_response = requests.post('https://candidate.hubteam.com/candidateTest/v3/problem/result?userKey=4345b1d67362a424348e1cd8e827', data)
