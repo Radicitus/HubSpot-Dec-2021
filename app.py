@@ -8,15 +8,46 @@ def pretty_json(j):
     print(pj)
 
 
-def create_session_set(user_id, sessions):
+def create_session_set(user_id, user_visits):
+    sessions = []
+    session_pages = []
+    session_duration = 0
+    session_start = user_visits[0][1]
     # Determine the groups of sessions
+    i = 0
+    while i < len(user_visits) - 1:
+        if user_visits[i + 1][1] - user_visits[i][1] < 600000:
+            session_pages.append(user_visits[i][0])
+            session_pages.append(user_visits[i + 1][0])
+            session_duration += user_visits[i + 1][1] - user_visits[i][1]
+            i += 1
+        else:
+            if not session_duration:
+                sessions.append(
+                    {
+                        'duration': session_duration,
+                        'pages': user_visits[i][0],
+                        'startTime': session_start
+                    }
+                )
+            else:
+                sessions.append(
+                    {
+                        'duration': session_duration,
+                        'pages': sorted(session_pages),
+                        'startTime': session_start
+                    }
+                )
+            i += 1
+            session_pages = []
+            session_duration = 0
+            session_start = user_visits[i][1]
+
+    return sessions
 
     # Determine the duration of a session group
-
     # Determine the pages searched in the session group
-
     # Determine the start time by ordering timestamp
-    return []
 
 
 # BEGIN MAIN PROGRAM
@@ -41,8 +72,14 @@ grouped_visits = {k: v for k, v in sorted(grouped_visits.items(), key=lambda ite
 
 # Pass grouped visits to helper function and store return values
 sessions_by_user = {}
-for user, visits in grouped_visits:
+for user, visits in grouped_visits.items():
     sessions_by_user[user] = create_session_set(user, visits)
 
-
-print(sessions_by_user)
+# Jsonify sessions_by_user and send by http call
+data = json.dumps(
+    {
+        'sessionsByUser': sessions_by_user
+    }
+)
+post_response = requests.post('https://candidate.hubteam.com/candidateTest/v3/problem/result?userKey=4345b1d67362a424348e1cd8e827', data)
+print(post_response.status_code, post_response.reason, post_response.content)
