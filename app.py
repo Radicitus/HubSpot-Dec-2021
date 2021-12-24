@@ -69,7 +69,10 @@ for v in response:
         grouped_visits[id] = [[v['url'], v['timestamp']]]
 
 # Sort visits by timestamp
-grouped_visits = {k: v for k, v in sorted(grouped_visits.items(), key=lambda item: item[1])}
+s_grouped_visits = {}
+for key, val in grouped_visits.items():
+    s_grouped_visits[key] = sorted(val, key=lambda vis: vis[1])
+grouped_visits = s_grouped_visits
 
 # Pass grouped visits to helper function and store return values
 sessions_by_user = {}
